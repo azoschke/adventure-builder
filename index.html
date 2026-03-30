@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FFXIV Adventure Planner</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+  <!-- Cytoscape.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+  <!-- Cytoscape edgehandles extension -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape-edgehandles/4.0.1/cytoscape-edgehandles.min.js"></script>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ===== Top Bar ===== -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="app-title">Adventure Planner</span>
+      <div id="connection-status">
+        <span class="status-dot"></span>
+        <span class="status-text">Not connected</span>
+      </div>
+    </div>
+    <div class="top-bar-center">
+      <span id="unsaved-badge">Unsaved Changes</span>
+    </div>
+    <div class="top-bar-right">
+      <button id="sync-btn" class="btn">Sync from Sheet</button>
+      <button id="export-btn" class="btn btn-primary">Export Data</button>
+    </div>
+  </div>
+
+  <!-- ===== Draft Notice ===== -->
+  <div id="draft-notice" class="draft-notice">
+    <p>You have unsaved local changes from a previous session.</p>
+    <div class="draft-notice-buttons">
+      <button id="draft-keep-btn" class="btn btn-vote">Keep Working</button>
+      <button id="draft-export-btn" class="btn btn-primary">Export</button>
+      <button id="draft-discard-btn" class="btn btn-danger">Discard &amp; Sync from Sheet</button>
+    </div>
+  </div>
+
+  <!-- ===== Main Content ===== -->
+  <div class="main-content">
+    <!-- Graph Panel -->
+    <div class="graph-panel">
+      <div class="graph-toolbar">
+        <button id="add-node-btn" class="btn" title="Add new node">+ Node</button>
+        <button id="auto-layout-btn" class="btn" title="Auto-arrange nodes">Auto Layout</button>
+        <button id="fit-view-btn" class="btn" title="Fit all nodes in view">Fit View</button>
+      </div>
+      <div id="cy-container"></div>
+    </div>
+
+    <!-- Editor Panel -->
+    <div class="editor-panel">
+      <div class="editor-header">
+        <h2>Node Editor</h2>
+      </div>
+
+      <div id="editor-placeholder">
+        <div class="placeholder-icon">&#9830;</div>
+        <p>Select a node on the canvas to edit it, or right-click to add a new node.</p>
+      </div>
+
+      <div id="editor-form">
+        <div class="field-group">
+          <label class="field-label" for="node-id-input">Node ID</label>
+          <input type="text" id="node-id-input" class="field-input field-id-input">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="node-title">Title</label>
+          <input type="text" id="node-title" class="field-input" placeholder="Node title...">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="day-number">Day Number</label>
+          <input type="number" id="day-number" class="field-input" placeholder="(optional)" min="1" max="90">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="node-type">Type</label>
+          <select id="node-type" class="field-input field-select">
+            <option value="daily">Daily</option>
+            <option value="random_event">Random Event</option>
+            <option value="milestone">Milestone</option>
+            <option value="ending">Ending</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="location">Location in Eorzea</label>
+          <input type="text" id="location" class="field-input" placeholder="e.g., Lower La Noscea">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="narrative-text">Narrative Text</label>
+          <textarea id="narrative-text" class="field-input field-textarea" placeholder="The story beat for this node..."></textarea>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="success-node">Success Path &rarr;</label>
+          <select id="success-node" class="field-input field-select">
+            <option value="">(none)</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="fail-node">Fail Path &rarr;</label>
+          <select id="fail-node" class="field-input field-select">
+            <option value="">(none)</option>
+          </select>
+        </div>
+
+        <div class="field-group" id="ending-id-group" style="display:none;">
+          <label class="field-label" for="ending-id">Ending ID</label>
+          <select id="ending-id" class="field-input field-select">
+            <option value="">(none)</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+          </select>
+        </div>
+
+        <!-- Vote Options (for random_event type) -->
+        <div id="vote-options-section">
+          <div class="vote-section-header">
+            <h3>Vote Options</h3>
+            <button id="add-vote-option-btn" class="btn" style="font-size:12px; padding:4px 10px;">+ Option</button>
+          </div>
+          <div id="vote-options-list"></div>
+        </div>
+
+        <!-- Delete -->
+        <div class="delete-section">
+          <button id="delete-node-btn" class="btn btn-danger" style="width:100%;">Delete Node</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Bottom Bar ===== -->
+  <div class="bottom-bar">
+    <div class="bottom-bar-left">
+      <span id="node-count">0 nodes</span>
+      <span id="ending-count">0 endings</span>
+    </div>
+    <div class="bottom-bar-right">
+      <span id="sync-status-text" class="status-synced">In sync with sheet</span>
+      <span id="last-synced">Last sync: Never</span>
+    </div>
+  </div>
+
+  <!-- ===== Export Modal ===== -->
+  <div id="export-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Export Data</h2>
+        <button id="export-close-btn" class="btn">Close</button>
+      </div>
+      <div class="modal-note">
+        Copy each tab's data and paste it into the matching tab in your Google Sheet (Ctrl+A &rarr; Ctrl+V to replace all content).
+      </div>
+      <div class="export-tabs">
+        <button class="export-tab-btn active" data-tab="nodes">Nodes</button>
+        <button class="export-tab-btn" data-tab="votes">VoteOptions</button>
+        <button class="export-tab-btn" data-tab="endings">Endings</button>
+        <button class="export-tab-btn" data-tab="config">Config</button>
+      </div>
+      <div id="export-nodes" class="export-tab-content active">
+        <textarea id="export-nodes-data" readonly></textarea>
+        <div class="export-actions">
+          <span id="export-nodes-count" class="export-row-count">0 rows</span>
+          <button class="btn btn-primary copy-btn" data-textarea="export-nodes-data">Copy to Clipboard</button>
+        </div>
+      </div>
+      <div id="export-votes" class="export-tab-content">
+        <textarea id="export-votes-data" readonly></textarea>
+        <div class="export-actions">
+          <span id="export-votes-count" class="export-row-count">0 rows</span>
+          <button class="btn btn-primary copy-btn" data-textarea="export-votes-data">Copy to Clipboard</button>
+        </div>
+      </div>
+      <div id="export-endings" class="export-tab-content">
+        <textarea id="export-endings-data" readonly></textarea>
+        <div class="export-actions">
+          <span id="export-endings-count" class="export-row-count">0 rows</span>
+          <button class="btn btn-primary copy-btn" data-textarea="export-endings-data">Copy to Clipboard</button>
+        </div>
+      </div>
+      <div id="export-config" class="export-tab-content">
+        <textarea id="export-config-data" readonly></textarea>
+        <div class="export-actions">
+          <span id="export-config-count" class="export-row-count">0 rows</span>
+          <button class="btn btn-primary copy-btn" data-textarea="export-config-data">Copy to Clipboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== App Scripts ===== -->
+  <script src="js/utils.js"></script>
+  <script src="js/sheets.js"></script>
+  <script src="js/exporter.js"></script>
+  <script src="js/graph.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
