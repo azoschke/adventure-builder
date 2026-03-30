@@ -289,7 +289,7 @@ const App = {
       node_id: id,
       node_title: 'New Node',
       day_number: '',
-      node_type: 'daily',
+      node_type: 'success',
       location: '',
       narrative_text: '',
       success_node_id: '',

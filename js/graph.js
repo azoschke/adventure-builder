@@ -8,7 +8,9 @@ const Graph = {
   _contextTarget: null,
 
   NODE_COLORS: {
-    daily: { bg: '#2d5a2d', border: '#4caf50', text: '#c8e6c9' },
+    success: { bg: '#2d5a2d', border: '#4caf50', text: '#c8e6c9' },
+    failure: { bg: '#5a1a1a', border: '#f44336', text: '#ffcdd2' },
+    daily: { bg: '#1a3a4a', border: '#4a9aba', text: '#b3e0f2' },
     random_event: { bg: '#5a4a00', border: '#ffc107', text: '#fff8e1' },
     milestone: { bg: '#4a2d5a', border: '#9c27b0', text: '#e1bee7' },
     ending: { bg: '#5a4a00', border: '#ffd700', text: '#fff8e1' },
@@ -29,19 +31,20 @@ const Graph = {
           style: {
             'label': 'data(label)',
             'text-wrap': 'wrap',
-            'text-max-width': '120px',
-            'font-size': '11px',
+            'text-max-width': '170px',
+            'font-size': '10px',
             'color': '#e0d6c8',
             'text-valign': 'center',
             'text-halign': 'center',
             'background-color': 'data(bgColor)',
             'border-color': 'data(borderColor)',
             'border-width': 2,
-            'width': 140,
-            'height': 50,
+            'width': 190,
+            'height': 'data(nodeHeight)',
             'shape': 'roundrectangle',
             'text-outline-color': '#1a1a2e',
             'text-outline-width': 1,
+            'padding': '8px',
           }
         },
         {
@@ -57,8 +60,8 @@ const Graph = {
           selector: 'node.ending',
           style: {
             'shape': 'star',
-            'width': 70,
-            'height': 70,
+            'width': 90,
+            'height': 90,
             'font-size': '10px',
             'text-max-width': '80px',
           }
@@ -261,16 +264,33 @@ const Graph = {
     // Add nodes
     Object.values(state.nodes).forEach(node => {
       const colors = this.NODE_COLORS[node.node_type] || this.NODE_COLORS.daily;
-      const label = node.node_title || node.node_id;
-      const dayPrefix = node.day_number ? `D${node.day_number}: ` : '';
+      const title = node.node_title || node.node_id;
+
+      // Build multi-line label: title, location, narrative preview
+      const lines = [title];
+      if (node.location) {
+        lines.push(node.location);
+      }
+      if (node.narrative_text) {
+        const preview = node.narrative_text.length > 60
+          ? node.narrative_text.substring(0, 57) + '...'
+          : node.narrative_text;
+        lines.push(preview);
+      }
+      const label = lines.join('\n');
+
+      // Scale node height based on content
+      const lineCount = lines.length;
+      const nodeHeight = Math.max(50, 28 + lineCount * 18);
 
       elements.push({
         group: 'nodes',
         data: {
           id: node.node_id,
-          label: dayPrefix + label,
+          label: label,
           bgColor: colors.bg,
           borderColor: colors.border,
+          nodeHeight: nodeHeight,
         },
         classes: node.node_type === 'ending' ? 'ending' : '',
         position: {

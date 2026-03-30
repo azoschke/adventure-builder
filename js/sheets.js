@@ -126,7 +126,7 @@ const Sheets = {
         node_id: row.node_id,
         node_title: row.node_title || '',
         day_number: row.day_number || '',
-        node_type: row.node_type || 'daily',
+        node_type: row.node_type || 'success',
         location: row.location || '',
         narrative_text: row.narrative_text || '',
         success_node_id: row.success_node_id || '',
