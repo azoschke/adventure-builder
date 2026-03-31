@@ -9,16 +9,16 @@ const Graph = {
   _measureEl: null,
 
   NODE_COLORS: {
-    neutral:  { bg: '#1a2a3a', border: '#4a7a9a', text: '#b3d4e8' },
-    success:  { bg: '#2d5a2d', border: '#4caf50', text: '#c8e6c9' },
-    failure:  { bg: '#5a1a1a', border: '#f44336', text: '#ffcdd2' },
-    ending:   { bg: '#4a3a10', border: '#ffd700', text: '#fff8e1' },
+    neutral:  { bg: '#e3ded3', border: '#b8ae9a', text: '#2c1810' },
+    success:  { bg: '#dde8d5', border: '#4a7c4f', text: '#2c1810' },
+    failure:  { bg: '#edd5d2', border: '#a54d44', text: '#2c1810' },
+    ending:   { bg: '#e8dcc8', border: '#8c6d2e', text: '#2c1810' },
   },
 
   EDGE_STYLES: {
-    success: { lineColor: '#4caf50', lineStyle: 'solid', targetArrowColor: '#4caf50' },
-    fail:    { lineColor: '#f44336', lineStyle: 'dashed', targetArrowColor: '#f44336' },
-    vote:    { lineColor: '#ffc107', lineStyle: 'dotted', targetArrowColor: '#ffc107' },
+    success: { lineColor: '#4a7c4f', lineStyle: 'solid', targetArrowColor: '#4a7c4f' },
+    fail:    { lineColor: '#a54d44', lineStyle: 'dashed', targetArrowColor: '#a54d44' },
+    vote:    { lineColor: '#b07830', lineStyle: 'dotted', targetArrowColor: '#b07830' },
   },
 
   NODE_WIDTH: 330,
