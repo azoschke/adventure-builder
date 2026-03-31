@@ -12,8 +12,9 @@
 
   <!-- Cytoscape.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
-  <!-- Cytoscape edgehandles extension -->
+  <!-- Cytoscape extensions -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape-edgehandles/4.0.1/cytoscape-edgehandles.min.js"></script>
+  <script src="https://unpkg.com/cytoscape-node-html-label@1.2.2/dist/cytoscape-node-html-label.min.js"></script>
 
   <!-- App Styles -->
   <link rel="stylesheet" href="css/styles.css">
@@ -90,13 +91,18 @@
         <div class="field-group">
           <label class="field-label" for="node-type">Type</label>
           <select id="node-type" class="field-input field-select">
+            <option value="neutral">Neutral</option>
             <option value="success">Success</option>
             <option value="failure">Failure</option>
-            <option value="daily">Daily</option>
-            <option value="random_event">Random Event</option>
-            <option value="milestone">Milestone</option>
             <option value="ending">Ending</option>
           </select>
+        </div>
+
+        <div class="field-group field-group-inline">
+          <label class="field-checkbox-label">
+            <input type="checkbox" id="is-random-event">
+            <span>Random Event (Party Vote)</span>
+          </label>
         </div>
 
         <div class="field-group">
@@ -136,7 +142,7 @@
           </select>
         </div>
 
-        <!-- Vote Options (for random_event type) -->
+        <!-- Vote Options (for random event nodes) -->
         <div id="vote-options-section">
           <div class="vote-section-header">
             <h3>Vote Options</h3>
