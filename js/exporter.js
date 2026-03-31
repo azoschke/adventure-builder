@@ -4,9 +4,9 @@ const Exporter = {
   // Generate TSV for the Nodes tab
   exportNodes(nodes) {
     const headers = [
-      'node_id', 'node_title', 'day_number', 'node_type', 'location',
-      'narrative_text', 'success_node_id', 'fail_node_id', 'ending_id',
-      'x_position', 'y_position'
+      'node_id', 'node_title', 'day_number', 'node_type', 'is_random_event',
+      'location', 'narrative_text', 'success_node_id', 'fail_node_id',
+      'ending_id', 'x_position', 'y_position'
     ];
 
     const rows = [headers.join('\t')];
@@ -23,7 +23,9 @@ const Exporter = {
       const values = headers.map(h => {
         let val = node[h];
         if (val === null || val === undefined) val = '';
-        if (h === 'x_position' || h === 'y_position') {
+        if (h === 'is_random_event') {
+          val = val ? 'TRUE' : 'FALSE';
+        } else if (h === 'x_position' || h === 'y_position') {
           val = val !== null && val !== undefined && val !== '' ? Math.round(Number(val)) : '';
         }
         return Utils.escapeForTSV(String(val));

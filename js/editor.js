@@ -19,6 +19,9 @@ const Editor = {
       }
     });
 
+    // Random event checkbox
+    document.getElementById('is-random-event').addEventListener('change', () => this._onFieldChange());
+
     // Node ID rename
     document.getElementById('node-id-input').addEventListener('change', (e) => {
       this._onNodeIdRename(e.target.value.trim());
@@ -48,10 +51,11 @@ const Editor = {
     document.getElementById('node-id-input').value = node.node_id;
     document.getElementById('node-title').value = node.node_title || '';
     document.getElementById('day-number').value = node.day_number || '';
-    document.getElementById('node-type').value = node.node_type || 'daily';
+    document.getElementById('node-type').value = node.node_type || 'neutral';
     document.getElementById('location').value = node.location || '';
     document.getElementById('narrative-text').value = node.narrative_text || '';
     document.getElementById('ending-id').value = node.ending_id || '';
+    document.getElementById('is-random-event').checked = !!node.is_random_event;
 
     // Populate node ID dropdowns
     this._populateNodeDropdowns();
@@ -62,20 +66,18 @@ const Editor = {
     this._toggleEndingField(node.node_type);
 
     // Show/hide vote options
-    this._toggleVoteSection(node.node_type);
-    if (node.node_type === 'random_event') {
+    this._toggleVoteSection(!!node.is_random_event);
+    if (node.is_random_event) {
       this._renderVoteOptions(nodeId);
     }
   },
 
-  // Clear the editor
   clear() {
     this.currentNodeId = null;
     document.getElementById('editor-placeholder').style.display = 'flex';
     document.getElementById('editor-form').style.display = 'none';
   },
 
-  // Populate success/fail dropdowns with all node IDs
   _populateNodeDropdowns() {
     const nodeIds = Object.keys(App.state.nodes).sort();
     ['success-node', 'fail-node'].forEach(id => {
@@ -83,7 +85,7 @@ const Editor = {
       const currentVal = select.value;
       select.innerHTML = '<option value="">(none)</option>';
       nodeIds.forEach(nid => {
-        if (nid === this.currentNodeId) return; // don't link to self
+        if (nid === this.currentNodeId) return;
         const node = App.state.nodes[nid];
         const label = node.node_title ? `${nid} — ${node.node_title}` : nid;
         const opt = document.createElement('option');
@@ -100,9 +102,9 @@ const Editor = {
     group.style.display = nodeType === 'ending' ? 'block' : 'none';
   },
 
-  _toggleVoteSection(nodeType) {
+  _toggleVoteSection(isRandomEvent) {
     const section = document.getElementById('vote-options-section');
-    section.style.display = nodeType === 'random_event' ? 'block' : 'none';
+    section.style.display = isRandomEvent ? 'block' : 'none';
   },
 
   _renderVoteOptions(nodeId) {
@@ -126,13 +128,12 @@ const Editor = {
               return `<option value="${nid}" ${nid === opt.target_node_id ? 'selected' : ''}>${this._escapeHtml(label)}</option>`;
             }).join('')}
           </select>
-          <button class="btn-icon remove-vote-btn" data-idx="${idx}" title="Remove option">✕</button>
+          <button class="btn-icon remove-vote-btn" data-idx="${idx}" title="Remove option">&#10005;</button>
         </div>
       `;
       container.appendChild(div);
     });
 
-    // Event listeners for vote option fields
     container.querySelectorAll('.vote-label').forEach(input => {
       input.addEventListener('input', (e) => {
         const i = parseInt(e.target.dataset.idx, 10);
@@ -159,6 +160,7 @@ const Editor = {
     if (!this.currentNodeId) return;
 
     const nodeType = document.getElementById('node-type').value;
+    const isRandomEvent = document.getElementById('is-random-event').checked;
 
     const updates = {
       node_title: document.getElementById('node-title').value,
@@ -169,14 +171,14 @@ const Editor = {
       success_node_id: document.getElementById('success-node').value,
       fail_node_id: document.getElementById('fail-node').value,
       ending_id: nodeType === 'ending' ? document.getElementById('ending-id').value : '',
+      is_random_event: isRandomEvent,
     };
 
     App.updateNode(this.currentNodeId, updates);
 
-    // Toggle UI sections
     this._toggleEndingField(nodeType);
-    this._toggleVoteSection(nodeType);
-    if (nodeType === 'random_event') {
+    this._toggleVoteSection(isRandomEvent);
+    if (isRandomEvent) {
       this._renderVoteOptions(this.currentNodeId);
     }
   },
@@ -198,7 +200,6 @@ const Editor = {
   _onDeleteNode() {
     if (!this.currentNodeId) return;
     if (!confirm(`Delete node "${this.currentNodeId}"? This cannot be undone.`)) return;
-
     App.deleteNode(this.currentNodeId);
     this.clear();
   },
@@ -220,7 +221,6 @@ const Editor = {
     const options = App.state.voteOptions[nodeId];
     if (!options) return;
     options.splice(index, 1);
-    // Re-number
     options.forEach((opt, i) => opt.option_order = i + 1);
     App.markDirty();
     this._renderVoteOptions(nodeId);

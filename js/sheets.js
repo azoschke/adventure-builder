@@ -132,6 +132,7 @@ const Sheets = {
         success_node_id: row.success_node_id || '',
         fail_node_id: row.fail_node_id || '',
         ending_id: row.ending_id || '',
+        is_random_event: row.is_random_event === 'TRUE' || row.is_random_event === 'true' || row.is_random_event === '1',
         x_position: row.x_position ? parseFloat(row.x_position) : null,
         y_position: row.y_position ? parseFloat(row.y_position) : null,
       };

@@ -6,21 +6,22 @@ const Graph = {
   onNodeDeselect: null, // callback()
   onPositionsChanged: null, // callback({nodeId: {x, y}})
   _contextTarget: null,
+  _measureEl: null,
 
   NODE_COLORS: {
-    success: { bg: '#2d5a2d', border: '#4caf50', text: '#c8e6c9' },
-    failure: { bg: '#5a1a1a', border: '#f44336', text: '#ffcdd2' },
-    daily: { bg: '#1a3a4a', border: '#4a9aba', text: '#b3e0f2' },
-    random_event: { bg: '#5a4a00', border: '#ffc107', text: '#fff8e1' },
-    milestone: { bg: '#4a2d5a', border: '#9c27b0', text: '#e1bee7' },
-    ending: { bg: '#5a4a00', border: '#ffd700', text: '#fff8e1' },
+    neutral:  { bg: '#1a2a3a', border: '#4a7a9a', text: '#b3d4e8' },
+    success:  { bg: '#2d5a2d', border: '#4caf50', text: '#c8e6c9' },
+    failure:  { bg: '#5a1a1a', border: '#f44336', text: '#ffcdd2' },
+    ending:   { bg: '#4a3a10', border: '#ffd700', text: '#fff8e1' },
   },
 
   EDGE_STYLES: {
     success: { lineColor: '#4caf50', lineStyle: 'solid', targetArrowColor: '#4caf50' },
-    fail: { lineColor: '#f44336', lineStyle: 'dashed', targetArrowColor: '#f44336' },
-    vote: { lineColor: '#ffc107', lineStyle: 'dotted', targetArrowColor: '#ffc107' },
+    fail:    { lineColor: '#f44336', lineStyle: 'dashed', targetArrowColor: '#f44336' },
+    vote:    { lineColor: '#ffc107', lineStyle: 'dotted', targetArrowColor: '#ffc107' },
   },
+
+  NODE_WIDTH: 220,
 
   init(containerId) {
     this.cy = cytoscape({
@@ -29,41 +30,36 @@ const Graph = {
         {
           selector: 'node',
           style: {
-            'label': 'data(label)',
-            'text-wrap': 'wrap',
-            'text-max-width': '170px',
-            'font-size': '10px',
-            'color': '#e0d6c8',
-            'text-valign': 'center',
-            'text-halign': 'center',
+            'label': '',
             'background-color': 'data(bgColor)',
             'border-color': 'data(borderColor)',
             'border-width': 2,
-            'width': 190,
+            'width': this.NODE_WIDTH,
             'height': 'data(nodeHeight)',
             'shape': 'roundrectangle',
-            'text-outline-color': '#1a1a2e',
-            'text-outline-width': 1,
-            'padding': '8px',
           }
         },
         {
           selector: 'node:selected',
           style: {
-            'border-width': 4,
+            'border-width': 3,
             'border-color': '#ffffff',
             'overlay-color': '#ffffff',
-            'overlay-opacity': 0.1,
+            'overlay-opacity': 0.08,
           }
         },
         {
           selector: 'node.ending',
           style: {
-            'shape': 'star',
-            'width': 90,
-            'height': 90,
-            'font-size': '10px',
-            'text-max-width': '80px',
+            'shape': 'roundrectangle',
+            'border-style': 'double',
+            'border-width': 4,
+          }
+        },
+        {
+          selector: 'node.random-event',
+          style: {
+            'border-style': 'dashed',
           }
         },
         {
@@ -85,8 +81,9 @@ const Graph = {
             'font-size': '9px',
             'color': '#a09888',
             'text-rotation': 'autorotate',
-            'text-outline-color': '#1a1a2e',
-            'text-outline-width': 1,
+            'text-background-color': '#1a1a2e',
+            'text-background-opacity': 0.8,
+            'text-background-padding': '2px',
           }
         },
         {
@@ -117,26 +114,74 @@ const Graph = {
       wheelSensitivity: 0.3,
     });
 
+    this._setupHtmlLabels();
     this._setupEventHandlers();
     this._setupEdgeHandles();
     this._setupContextMenu();
   },
 
+  _setupHtmlLabels() {
+    if (typeof this.cy.nodeHtmlLabel !== 'function') {
+      console.warn('cytoscape-node-html-label extension not loaded — falling back to plain labels');
+      // Fallback: re-enable plain text labels
+      this.cy.style().selector('node').style({
+        'label': 'data(fallbackLabel)',
+        'text-wrap': 'wrap',
+        'text-max-width': '190px',
+        'font-size': '10px',
+        'color': '#e0d6c8',
+        'text-valign': 'center',
+        'text-halign': 'center',
+      }).update();
+      this._htmlLabelsEnabled = false;
+      return;
+    }
+
+    this._htmlLabelsEnabled = true;
+
+    this.cy.nodeHtmlLabel([{
+      query: 'node',
+      halign: 'center',
+      valign: 'center',
+      halignBox: 'center',
+      valignBox: 'center',
+      cssClass: 'cy-node-html-wrapper',
+      tpl: (data) => {
+        const w = this.NODE_WIDTH - 24; // padding
+        let html = `<div class="node-html-content" style="width:${w}px;color:${data.textColor || '#e0d6c8'}">`;
+        html += `<div class="node-html-title">${this._escHtml(data.nodeTitle)}</div>`;
+        if (data.nodeLocation) {
+          html += `<div class="node-html-location">${this._escHtml(data.nodeLocation)}</div>`;
+        }
+        if (data.nodeNarrative) {
+          html += `<div class="node-html-narrative">${this._escHtml(data.nodeNarrative)}</div>`;
+        }
+        if (data.isRandomEvent) {
+          html += `<div class="node-html-badge">RANDOM EVENT</div>`;
+        }
+        html += '</div>';
+        return html;
+      }
+    }]);
+  },
+
+  _escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  },
+
   _setupEventHandlers() {
-    // Node selection
     this.cy.on('tap', 'node', (evt) => {
       const nodeId = evt.target.id();
       if (this.onNodeSelect) this.onNodeSelect(nodeId);
     });
 
-    // Canvas tap — deselect
     this.cy.on('tap', (evt) => {
       if (evt.target === this.cy) {
         if (this.onNodeDeselect) this.onNodeDeselect();
       }
     });
 
-    // Node drag — track position changes
     this.cy.on('dragfree', 'node', (evt) => {
       if (this.onPositionsChanged) {
         const pos = evt.target.position();
@@ -160,11 +205,8 @@ const Graph = {
       edgeType: () => 'flat',
       loopAllowed: () => false,
       complete: (sourceNode, targetNode, addedEdge) => {
-        // Remove the auto-created edge — we manage edges ourselves
         addedEdge.remove();
-        const sourceId = sourceNode.id();
-        const targetId = targetNode.id();
-        this._showConnectionDialog(sourceId, targetId);
+        this._showConnectionDialog(sourceNode.id(), targetNode.id());
       }
     });
   },
@@ -174,24 +216,11 @@ const Graph = {
 
     container.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      const rect = container.getBoundingClientRect();
-      const pos = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      };
-      // Convert to model coordinates
       const modelPos = this.cy.renderer().projectIntoViewport(e.clientX, e.clientY);
-
-      this._showContextMenu(e.clientX, e.clientY, {
-        x: modelPos[0],
-        y: modelPos[1],
-      });
+      this._showContextMenu(e.clientX, e.clientY, { x: modelPos[0], y: modelPos[1] });
     });
 
-    // Hide context menu on click elsewhere
-    document.addEventListener('click', () => {
-      this._hideContextMenu();
-    });
+    document.addEventListener('click', () => this._hideContextMenu());
   },
 
   _showContextMenu(screenX, screenY, modelPos) {
@@ -206,9 +235,7 @@ const Graph = {
 
     menu.querySelector('[data-action="add-node"]').addEventListener('click', () => {
       this._hideContextMenu();
-      if (window.App && App.addNode) {
-        App.addNode(modelPos.x, modelPos.y);
-      }
+      if (window.App && App.addNode) App.addNode(modelPos.x, modelPos.y);
     });
   },
 
@@ -221,17 +248,18 @@ const Graph = {
     const sourceNode = App.state.nodes[sourceId];
     if (!sourceNode) return;
 
+    const showVote = sourceNode.is_random_event;
     const dialog = document.createElement('div');
     dialog.className = 'connection-dialog-overlay';
     dialog.innerHTML = `
       <div class="connection-dialog">
         <h3>Create Connection</h3>
-        <p><strong>${sourceId}</strong> → <strong>${targetId}</strong></p>
+        <p><strong>${sourceId}</strong> &rarr; <strong>${targetId}</strong></p>
         <p>Set this connection as:</p>
         <div class="connection-dialog-buttons">
           <button class="btn btn-success" data-type="success">Success Path</button>
           <button class="btn btn-fail" data-type="fail">Fail Path</button>
-          ${sourceNode.node_type === 'random_event' ? '<button class="btn btn-vote" data-type="vote">Vote Option</button>' : ''}
+          ${showVote ? '<button class="btn btn-vote" data-type="vote">Vote Option</button>' : ''}
           <button class="btn btn-cancel" data-type="cancel">Cancel</button>
         </div>
       </div>
@@ -242,57 +270,77 @@ const Graph = {
       const type = e.target.dataset.type;
       if (!type) return;
       dialog.remove();
-
       if (type === 'cancel') return;
-
-      if (type === 'success') {
-        App.updateNode(sourceId, { success_node_id: targetId });
-      } else if (type === 'fail') {
-        App.updateNode(sourceId, { fail_node_id: targetId });
-      } else if (type === 'vote') {
-        App.addVoteOption(sourceId, targetId);
-      }
+      if (type === 'success') App.updateNode(sourceId, { success_node_id: targetId });
+      else if (type === 'fail') App.updateNode(sourceId, { fail_node_id: targetId });
+      else if (type === 'vote') App.addVoteOption(sourceId, targetId);
     });
+  },
+
+  // Estimate node height based on content
+  _estimateHeight(title, location, narrative, isRandomEvent) {
+    const contentWidth = this.NODE_WIDTH - 24;
+    // Approximate chars per line for each section
+    const titleCPL = 18;  // Cinzel is wider
+    const bodyCPL = 28;
+    const titleLineH = 22;
+    const locLineH = 16;
+    const narrLineH = 15;
+
+    let h = 20; // top+bottom padding
+    h += Math.ceil(Math.max((title || 'X').length, 1) / titleCPL) * titleLineH;
+    if (location) {
+      h += 4 + Math.ceil(location.length / bodyCPL) * locLineH;
+    }
+    if (narrative) {
+      h += 6 + Math.ceil(narrative.length / bodyCPL) * narrLineH;
+    }
+    if (isRandomEvent) {
+      h += 20; // badge
+    }
+    return Math.max(h, 50);
   },
 
   // Build the full graph from app state
   buildGraph(state) {
     this.cy.elements().remove();
-
     const elements = [];
 
     // Add nodes
     Object.values(state.nodes).forEach(node => {
-      const colors = this.NODE_COLORS[node.node_type] || this.NODE_COLORS.daily;
+      const colors = this.NODE_COLORS[node.node_type] || this.NODE_COLORS.neutral;
       const title = node.node_title || node.node_id;
+      const location = node.location || '';
+      const narrative = node.narrative_text || '';
+      const isRE = node.is_random_event;
 
-      // Build multi-line label: title, location, narrative preview
-      const lines = [title];
-      if (node.location) {
-        lines.push(node.location);
-      }
-      if (node.narrative_text) {
-        const preview = node.narrative_text.length > 60
-          ? node.narrative_text.substring(0, 57) + '...'
-          : node.narrative_text;
-        lines.push(preview);
-      }
-      const label = lines.join('\n');
+      const nodeHeight = this._estimateHeight(title, location, narrative, isRE);
 
-      // Scale node height based on content
-      const lineCount = lines.length;
-      const nodeHeight = Math.max(50, 28 + lineCount * 18);
+      // Build classes
+      const classes = [];
+      if (node.node_type === 'ending') classes.push('ending');
+      if (isRE) classes.push('random-event');
+
+      // Fallback label for when HTML labels aren't available
+      const fallbackLines = [title];
+      if (location) fallbackLines.push(location);
+      if (narrative) fallbackLines.push(narrative);
 
       elements.push({
         group: 'nodes',
         data: {
           id: node.node_id,
-          label: label,
           bgColor: colors.bg,
           borderColor: colors.border,
+          textColor: colors.text,
           nodeHeight: nodeHeight,
+          nodeTitle: title,
+          nodeLocation: location,
+          nodeNarrative: narrative,
+          isRandomEvent: isRE,
+          fallbackLabel: fallbackLines.join('\n'),
         },
-        classes: node.node_type === 'ending' ? 'ending' : '',
+        classes: classes.join(' '),
         position: {
           x: node.x_position || Math.random() * 800,
           y: node.y_position || Math.random() * 600,
@@ -363,7 +411,6 @@ const Graph = {
     }
   },
 
-  // Run auto-layout
   autoLayout() {
     const layout = this.cy.layout({
       name: 'breadthfirst',
@@ -374,7 +421,6 @@ const Graph = {
     });
     layout.run();
 
-    // After layout, update node positions in App state
     this.cy.nodes().forEach(n => {
       const pos = n.position();
       if (this.onPositionsChanged) {
@@ -383,7 +429,6 @@ const Graph = {
     });
   },
 
-  // Select a node programmatically
   selectNode(nodeId) {
     this.cy.$(':selected').unselect();
     const node = this.cy.$id(nodeId);
@@ -393,16 +438,11 @@ const Graph = {
     }
   },
 
-  // Save current viewport state
   saveViewport() {
     if (!this.cy) return;
-    Utils.saveUIPrefs({
-      zoom: this.cy.zoom(),
-      pan: this.cy.pan(),
-    });
+    Utils.saveUIPrefs({ zoom: this.cy.zoom(), pan: this.cy.pan() });
   },
 
-  // Fit the graph in view
   fitView() {
     this.cy.fit(undefined, 50);
   },
