@@ -3,34 +3,43 @@
 const ImageExporter = {
   /**
    * Export a node as a parchment-styled JPG image.
+   * Creates an offscreen DOM card, renders with html2canvas, then triggers download.
    */
   async exportNodeAsImage(nodeId) {
     const node = App.state.nodes[nodeId];
     if (!node) return;
 
-    const card = await this._buildCard(node); // note: async now
+    const card = this._buildCard(node);
     document.body.appendChild(card);
+
+    // Wait for image to load if present
+    const img = card.querySelector('.parchment-card-image img');
+    if (img && img.src) {
+      await new Promise((resolve) => {
+        if (img.complete) { resolve(); return; }
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    }
 
     try {
       const canvas = await html2canvas(card, {
         scale: 2,
         useCORS: true,
-        allowTaint: false,
+        allowTaint: true,
         backgroundColor: '#e3ded3',
         width: 900,
       });
 
+      // Convert to JPG and download
       const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-
       const filename = (node.node_title || node.node_id || 'node')
-        .replace(/[^a-z0-9]+/gi, '-')
-        .toLowerCase();
+        .replace(/[^a-z0-9]+/gi, '-').toLowerCase();
 
       const link = document.createElement('a');
       link.download = `${filename}.jpg`;
       link.href = dataUrl;
       link.click();
-
     } catch (err) {
       console.error('Image export failed:', err);
       alert('Failed to export image. Check the console for details.');
@@ -39,24 +48,17 @@ const ImageExporter = {
     }
   },
 
-  /**
-   * Build the card DOM with Base64 images.
-   */
-  async _buildCard(node) {
+  _buildCard(node) {
     const card = document.createElement('div');
     card.className = 'parchment-card';
 
     let imageHtml = '';
     if (node.image_url) {
-      const base64Url = await this._fetchImageAsBase64(node.image_url);
-
-      if (base64Url) {
-        imageHtml = `
-          <div class="parchment-card-image">
-            <img src="${base64Url}" alt="">
-          </div>
-        `;
-      }
+      imageHtml = `
+        <div class="parchment-card-image">
+          <img src="${this._esc(node.image_url)}" alt="" crossorigin="anonymous">
+        </div>
+      `;
     }
 
     const title = node.node_title || '';
@@ -75,45 +77,9 @@ const ImageExporter = {
     return card;
   },
 
-  /**
-   * Fetch an image from any URL and convert to Base64
-   */
-  async _fetchImageAsBase64(url) {
-    try {
-      let fixed = url.trim();
-
-      // Convert Google Drive links to direct view
-      if (fixed.includes('drive.google.com')) {
-        const match = fixed.match(/\/d\/([^/]+)/) || fixed.match(/[?&]id=([^&]+)/);
-        if (match) {
-          fixed = `https://drive.google.com/uc?export=view&id=${match[1]}`;
-        }
-      }
-
-      const response = await fetch(fixed, { mode: 'cors' });
-      const blob = await response.blob();
-
-      return await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } catch (err) {
-      console.warn('Failed to fetch image as Base64:', url, err);
-      return null;
-    }
-  },
-
-  /**
-   * Escape HTML
-   */
   _esc(str) {
     if (!str) return '';
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   },
 };
