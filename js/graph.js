@@ -21,7 +21,7 @@ const Graph = {
     vote:    { lineColor: '#ffc107', lineStyle: 'dotted', targetArrowColor: '#ffc107' },
   },
 
-  NODE_WIDTH: 220,
+  NODE_WIDTH: 330,
 
   init(containerId) {
     this.cy = cytoscape({
@@ -149,6 +149,9 @@ const Graph = {
       tpl: (data) => {
         const w = this.NODE_WIDTH - 24; // padding
         let html = `<div class="node-html-content" style="width:${w}px;color:${data.textColor || '#e0d6c8'}">`;
+        if (data.nodeImageUrl) {
+          html += `<div class="node-html-image"><img src="${this._escHtml(data.nodeImageUrl)}" alt="" style="max-width:100%;max-height:120px;border-radius:4px;object-fit:cover;"></div>`;
+        }
         html += `<div class="node-html-title">${this._escHtml(data.nodeTitle)}</div>`;
         if (data.nodeLocation) {
           html += `<div class="node-html-location">${this._escHtml(data.nodeLocation)}</div>`;
@@ -278,16 +281,19 @@ const Graph = {
   },
 
   // Estimate node height based on content
-  _estimateHeight(title, location, narrative, isRandomEvent) {
+  _estimateHeight(title, location, narrative, isRandomEvent, imageUrl) {
     const contentWidth = this.NODE_WIDTH - 24;
     // Approximate chars per line for each section
-    const titleCPL = 18;  // Cinzel is wider
-    const bodyCPL = 28;
+    const titleCPL = 27;  // Cinzel is wider — scaled for 330px width
+    const bodyCPL = 42;
     const titleLineH = 22;
     const locLineH = 16;
     const narrLineH = 15;
 
     let h = 20; // top+bottom padding
+    if (imageUrl) {
+      h += 140; // image height + margin
+    }
     h += Math.ceil(Math.max((title || 'X').length, 1) / titleCPL) * titleLineH;
     if (location) {
       h += 4 + Math.ceil(location.length / bodyCPL) * locLineH;
@@ -314,7 +320,8 @@ const Graph = {
       const narrative = node.narrative_text || '';
       const isRE = node.is_random_event;
 
-      const nodeHeight = this._estimateHeight(title, location, narrative, isRE);
+      const imageUrl = node.image_url || '';
+      const nodeHeight = this._estimateHeight(title, location, narrative, isRE, imageUrl);
 
       // Build classes
       const classes = [];
@@ -338,6 +345,7 @@ const Graph = {
           nodeLocation: location,
           nodeNarrative: narrative,
           isRandomEvent: isRE,
+          nodeImageUrl: imageUrl,
           fallbackLabel: fallbackLines.join('\n'),
         },
         classes: classes.join(' '),

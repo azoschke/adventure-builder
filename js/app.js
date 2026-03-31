@@ -288,6 +288,7 @@ const App = {
     this.state.nodes[id] = {
       node_id: id,
       node_title: 'New Node',
+      image_url: '',
       day_number: '',
       node_type: 'neutral',
       is_random_event: false,
