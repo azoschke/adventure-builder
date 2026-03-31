@@ -36,6 +36,13 @@ const Editor = {
     document.getElementById('add-vote-option-btn').addEventListener('click', () => {
       this._onAddVoteOption();
     });
+
+    // Export as image button
+    document.getElementById('export-image-btn').addEventListener('click', () => {
+      if (this.currentNodeId) {
+        ImageExporter.exportNodeAsImage(this.currentNodeId);
+      }
+    });
   },
 
   // Show a node in the editor
