@@ -17,14 +17,12 @@ const ImageExporter = {
       await new Promise((resolve) => {
         const done = () => resolve();
 
-        if (img.complete && img.naturalWidth !== 0) {
-          return resolve();
-        }
+        if (img.complete && img.naturalWidth !== 0) return resolve();
 
         img.onload = done;
         img.onerror = done;
 
-        // fallback so it never hangs
+        // fallback timeout
         setTimeout(done, 3000);
       });
     }
@@ -33,7 +31,7 @@ const ImageExporter = {
       const canvas = await html2canvas(card, {
         scale: 2,
         useCORS: true,
-        allowTaint: false, // safer
+        allowTaint: false,
         backgroundColor: '#e3ded3',
         width: 900,
       });
@@ -48,7 +46,6 @@ const ImageExporter = {
       link.download = `${filename}.jpg`;
       link.href = dataUrl;
       link.click();
-
     } catch (err) {
       console.error('Image export failed:', err);
       alert('Failed to export image. Check the console for details.');
@@ -92,35 +89,26 @@ const ImageExporter = {
   },
 
   /**
-   * Smart image URL handler
-   * - Uses direct URLs when safe (Carrd, CDN, etc.)
-   * - Proxies problematic sources (Google Drive)
+   * Proxy ALL images to bypass CORS for html2canvas
    */
   _fixImageUrl(url) {
     if (!url) return '';
 
     let fixed = url.trim();
 
-    // --- Detect Google Drive ---
+    // Convert Google Drive links to direct format
     if (fixed.includes('drive.google.com')) {
       const match = fixed.match(/\/d\/([^/]+)/) || fixed.match(/[?&]id=([^&]+)/);
-
       if (match) {
-        const fileId = match[1];
-
-        const driveUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-
-        // Remove protocol for proxy
-        const clean = driveUrl.replace(/^https?:\/\//, '');
-
-        // Route through proxy (required for canvas)
-        return `https://images.weserv.nl/?url=${encodeURIComponent(clean)}&w=900`;
+        fixed = `https://drive.google.com/uc?export=view&id=${match[1]}`;
       }
     }
 
-    // --- All other URLs (Carrd, CDN, etc.) ---
-    // Use directly (faster, no proxy needed)
-    return fixed;
+    // Remove protocol for proxy
+    const clean = fixed.replace(/^https?:\/\//, '');
+
+    // Proxy ALL images through a CORS-friendly service
+    return `https://images.weserv.nl/?url=${encodeURIComponent(clean)}&w=900`;
   },
 
   /**
