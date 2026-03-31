@@ -617,6 +617,11 @@ h1, h2, h3 {
   line-height: 1.35;
 }
 
+.node-html-image {
+  margin-bottom: 4px;
+  text-align: center;
+}
+
 .node-html-title {
   font-family: 'Cinzel', 'Georgia', serif;
   font-size: 13px;

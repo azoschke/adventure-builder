@@ -4,7 +4,7 @@ const Exporter = {
   // Generate TSV for the Nodes tab
   exportNodes(nodes) {
     const headers = [
-      'node_id', 'node_title', 'day_number', 'node_type', 'is_random_event',
+      'node_id', 'node_title', 'image_url', 'day_number', 'node_type', 'is_random_event',
       'location', 'narrative_text', 'success_node_id', 'fail_node_id',
       'ending_id', 'x_position', 'y_position'
     ];

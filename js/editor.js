@@ -10,7 +10,7 @@ const Editor = {
   _setupEventListeners() {
     // Field changes
     const fields = ['node-title', 'day-number', 'node-type', 'location', 'narrative-text',
-                     'success-node', 'fail-node', 'ending-id'];
+                     'success-node', 'fail-node', 'ending-id', 'image-url'];
     fields.forEach(id => {
       const el = document.getElementById(id);
       if (el) {
@@ -49,6 +49,7 @@ const Editor = {
 
     // Populate fields
     document.getElementById('node-id-input').value = node.node_id;
+    document.getElementById('image-url').value = node.image_url || '';
     document.getElementById('node-title').value = node.node_title || '';
     document.getElementById('day-number').value = node.day_number || '';
     document.getElementById('node-type').value = node.node_type || 'neutral';
@@ -163,6 +164,7 @@ const Editor = {
     const isRandomEvent = document.getElementById('is-random-event').checked;
 
     const updates = {
+      image_url: document.getElementById('image-url').value,
       node_title: document.getElementById('node-title').value,
       day_number: document.getElementById('day-number').value,
       node_type: nodeType,

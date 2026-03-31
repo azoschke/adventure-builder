@@ -125,6 +125,7 @@ const Sheets = {
       nodes[row.node_id] = {
         node_id: row.node_id,
         node_title: row.node_title || '',
+        image_url: row.image_url || '',
         day_number: row.day_number || '',
         node_type: row.node_type || 'success',
         location: row.location || '',
