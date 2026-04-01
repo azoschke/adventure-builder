@@ -144,7 +144,7 @@ const Graph = {
       halign: 'center',
       valign: 'top',
       halignBox: 'center',
-      valignBox: 'top',
+      valignBox: 'bottom',
       cssClass: 'cy-node-html-wrapper',
       tpl: (data) => {
         const w = this.NODE_WIDTH - 24; // content padding
