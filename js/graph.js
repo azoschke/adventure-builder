@@ -150,7 +150,7 @@ const Graph = {
         const w = this.NODE_WIDTH - 24; // padding
         let html = `<div class="node-html-content" style="width:${w}px;color:${data.textColor || '#e0d6c8'}">`;
         if (data.nodeImageUrl) {
-          html += `<div class="node-html-image"><img src="${this._escHtml(data.nodeImageUrl)}" alt="" style="max-width:100%;max-height:120px;border-radius:4px;object-fit:cover;"></div>`;
+          html += `<div class="node-html-image"><img src="${this._escHtml(data.nodeImageUrl)}" alt="" style="width:${w}px;height:100px;object-fit:cover;border-radius:4px;display:block;"></div>`;
         }
         html += `<div class="node-html-title">${this._escHtml(data.nodeTitle)}</div>`;
         if (data.nodeLocation) {
@@ -290,16 +290,16 @@ const Graph = {
     const locLineH = 16;
     const narrLineH = 15;
 
-    let h = 20; // top+bottom padding
+    let h = 10; // top+bottom padding
     if (imageUrl) {
-      h += 140; // image height + margin
+      h += 108; // image height (100px) + margin
     }
     h += Math.ceil(Math.max((title || 'X').length, 1) / titleCPL) * titleLineH;
     if (location) {
       h += 4 + Math.ceil(location.length / bodyCPL) * locLineH;
     }
     if (narrative) {
-      h += 6 + Math.ceil(narrative.length / bodyCPL) * narrLineH;
+      h += 4 + Math.ceil(narrative.length / bodyCPL) * narrLineH;
     }
     if (isRandomEvent) {
       h += 20; // badge
