@@ -142,16 +142,16 @@ const Graph = {
     this.cy.nodeHtmlLabel([{
       query: 'node',
       halign: 'center',
-      valign: 'center',
+      valign: 'top',
       halignBox: 'center',
-      valignBox: 'center',
+      valignBox: 'top',
       cssClass: 'cy-node-html-wrapper',
       tpl: (data) => {
-        let html = `<div class="node-html-content" style="width:${this.NODE_WIDTH}px;color:${data.textColor || '#e0d6c8'}">`;
+        const w = this.NODE_WIDTH - 24; // content padding
+        let html = `<div class="node-html-content" style="width:${w}px;color:${data.textColor || '#e0d6c8'}">`;
         if (data.nodeImageUrl) {
           html += `<div class="node-html-image"><img src="${this._escHtml(data.nodeImageUrl)}" alt=""></div>`;
         }
-        html += `<div class="node-html-text">`;
         html += `<div class="node-html-title">${this._escHtml(data.nodeTitle)}</div>`;
         if (data.nodeLocation) {
           html += `<div class="node-html-location">${this._escHtml(data.nodeLocation)}</div>`;
@@ -162,7 +162,7 @@ const Graph = {
         if (data.isRandomEvent) {
           html += `<div class="node-html-badge">RANDOM EVENT</div>`;
         }
-        html += '</div></div>';
+        html += '</div>';
         return html;
       }
     }]);

@@ -630,13 +630,10 @@ h1, h2, h3 {
   line-height: 1.35;
 }
 
-.node-html-text {
-  padding: 0 12px;
-}
-
 .node-html-image {
   margin-bottom: 10px;
   overflow: hidden;
+  border-radius: 4px;
 }
 
 .node-html-image img {
