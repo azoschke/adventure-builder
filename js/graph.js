@@ -142,9 +142,9 @@ const Graph = {
     this.cy.nodeHtmlLabel([{
       query: 'node',
       halign: 'center',
-      valign: 'top',
+      valign: 'center',
       halignBox: 'center',
-      valignBox: 'bottom',
+      valignBox: 'center',
       cssClass: 'cy-node-html-wrapper',
       tpl: (data) => {
         const w = this.NODE_WIDTH - 24; // content padding
@@ -280,31 +280,37 @@ const Graph = {
     });
   },
 
-  // Estimate node height based on content
-  _estimateHeight(title, location, narrative, isRandomEvent, imageUrl) {
-    const contentWidth = this.NODE_WIDTH - 24;
-    // Approximate chars per line for each section
-    const titleCPL = 27;  // Cinzel is wider — scaled for 330px width
-    const bodyCPL = 58;
-    const titleLineH = 22;
-    const locLineH = 16;
-    const narrLineH = 14;
-
-    let h = 24; // top+bottom padding
+  // Measure node height by rendering content offscreen
+  _measureHeight(title, location, narrative, isRandomEvent, imageUrl) {
+    const w = this.NODE_WIDTH - 24;
+    // Build the same HTML the template produces
+    let html = `<div class="node-html-content" style="width:${w}px;">`;
     if (imageUrl) {
-      h += 114; // image height (100px) + margin (10px) + offset (4px)
+      // Use a div with fixed height instead of loading the actual image
+      html += `<div class="node-html-image" style="height:100px;"></div>`;
     }
-    h += Math.ceil(Math.max((title || 'X').length, 1) / titleCPL) * titleLineH;
+    html += `<div class="node-html-title">${this._escHtml(title || '')}</div>`;
     if (location) {
-      h += 4 + Math.ceil(location.length / bodyCPL) * locLineH;
+      html += `<div class="node-html-location">${this._escHtml(location)}</div>`;
     }
     if (narrative) {
-      h += 4 + Math.ceil(narrative.length / bodyCPL) * narrLineH;
+      html += `<div class="node-html-narrative">${this._escHtml(narrative)}</div>`;
     }
     if (isRandomEvent) {
-      h += 20; // badge
+      html += `<div class="node-html-badge">RANDOM EVENT</div>`;
     }
-    return Math.max(h, 50);
+    html += '</div>';
+
+    // Create offscreen measurement container
+    if (!this._measureEl) {
+      this._measureEl = document.createElement('div');
+      this._measureEl.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;';
+      document.body.appendChild(this._measureEl);
+    }
+    this._measureEl.innerHTML = html;
+    const h = this._measureEl.firstChild.offsetHeight;
+    // Add vertical padding for the node chrome
+    return Math.max(h + 20, 50);
   },
 
   // Build the full graph from app state
@@ -321,7 +327,7 @@ const Graph = {
       const isRE = node.is_random_event;
 
       const imageUrl = node.image_url || '';
-      const nodeHeight = this._estimateHeight(title, location, narrative, isRE, imageUrl);
+      const nodeHeight = this._measureHeight(title, location, narrative, isRE, imageUrl);
 
       // Build classes
       const classes = [];
