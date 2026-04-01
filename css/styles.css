@@ -631,7 +631,7 @@ h1, h2, h3 {
 }
 
 .node-html-image {
-  margin-bottom: 4px;
+  margin-bottom: 10px;
   overflow: hidden;
 }
 
@@ -640,7 +640,6 @@ h1, h2, h3 {
   height: 100px;
   object-fit: cover;
   display: block;
-  border-radius: 4px;
 }
 
 .node-html-title {
