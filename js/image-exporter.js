@@ -56,7 +56,7 @@ const ImageExporter = {
     if (node.image_url) {
       imageHtml = `
         <div class="parchment-card-image">
-          <img src="${this._esc(node.image_url)}" alt="" crossorigin="anonymous">
+          <div style="width:900px;height:340px;background:url('${this._esc(node.image_url)}') center/cover no-repeat #1a1a1a;"></div>
         </div>
       `;
     }
