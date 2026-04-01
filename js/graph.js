@@ -147,11 +147,11 @@ const Graph = {
       valignBox: 'center',
       cssClass: 'cy-node-html-wrapper',
       tpl: (data) => {
-        const w = this.NODE_WIDTH - 24; // padding
-        let html = `<div class="node-html-content" style="width:${w}px;color:${data.textColor || '#e0d6c8'}">`;
+        let html = `<div class="node-html-content" style="width:${this.NODE_WIDTH}px;color:${data.textColor || '#e0d6c8'}">`;
         if (data.nodeImageUrl) {
-          html += `<div class="node-html-image" style="width:${this.NODE_WIDTH}px;margin-left:-12px;"><img src="${this._escHtml(data.nodeImageUrl)}" alt=""></div>`;
+          html += `<div class="node-html-image"><img src="${this._escHtml(data.nodeImageUrl)}" alt=""></div>`;
         }
+        html += `<div class="node-html-text">`;
         html += `<div class="node-html-title">${this._escHtml(data.nodeTitle)}</div>`;
         if (data.nodeLocation) {
           html += `<div class="node-html-location">${this._escHtml(data.nodeLocation)}</div>`;
@@ -162,7 +162,7 @@ const Graph = {
         if (data.isRandomEvent) {
           html += `<div class="node-html-badge">RANDOM EVENT</div>`;
         }
-        html += '</div>';
+        html += '</div></div>';
         return html;
       }
     }]);
@@ -285,12 +285,12 @@ const Graph = {
     const contentWidth = this.NODE_WIDTH - 24;
     // Approximate chars per line for each section
     const titleCPL = 27;  // Cinzel is wider — scaled for 330px width
-    const bodyCPL = 52;
+    const bodyCPL = 58;
     const titleLineH = 22;
     const locLineH = 16;
     const narrLineH = 14;
 
-    let h = 10; // top+bottom padding
+    let h = 24; // top+bottom padding
     if (imageUrl) {
       h += 114; // image height (100px) + margin (10px) + offset (4px)
     }
