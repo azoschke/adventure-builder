@@ -142,9 +142,9 @@ const Graph = {
     this.cy.nodeHtmlLabel([{
       query: 'node',
       halign: 'center',
-      valign: 'top',
+      valign: 'center',
       halignBox: 'center',
-      valignBox: 'bottom',
+      valignBox: 'center',
       cssClass: 'cy-node-html-wrapper',
       tpl: (data) => {
         const w = this.NODE_WIDTH - 24; // content padding
