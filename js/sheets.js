@@ -40,8 +40,8 @@ const Sheets = {
       const ch = text[i];
       if (ch === '"') {
         if (inQuotes && i + 1 < text.length && text[i + 1] === '"') {
-          current += '"';
-          i++; // skip escaped quote
+          current += '""';
+          i++; // skip second quote, preserve both so _parseCSVRow can unescape
         } else {
           inQuotes = !inQuotes;
           current += ch;
