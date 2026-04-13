@@ -70,7 +70,7 @@ const ImageExporter = {
       <div class="parchment-card-body">
         ${title ? `<div class="parchment-card-title">${this._esc(title)}</div>` : ''}
         ${subtitle ? `<div class="parchment-card-subtitle">${this._esc(subtitle)}</div>` : ''}
-        ${narrative ? `<div class="parchment-card-text">${this._esc(narrative)}</div>` : ''}
+        ${narrative ? `<div class="parchment-card-text">${this._formatText(narrative)}</div>` : ''}
       </div>
     `;
 
@@ -81,5 +81,15 @@ const ImageExporter = {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;')
               .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  },
+
+  // Convert plain text (with newlines) to HTML paragraphs.
+  // Double newlines become separate <p> blocks; single newlines become <br>.
+  _formatText(str) {
+    if (!str) return '';
+    return str
+      .split(/\n\n+/)
+      .map(para => `<p>${this._esc(para).replace(/\n/g, '<br>')}</p>`)
+      .join('');
   },
 };

@@ -774,4 +774,13 @@ h1, h2, h3 {
   color: var(--ink-color);
   max-width: 680px;
   margin: 0 auto;
+  text-align: left;
+}
+
+.parchment-card-text p {
+  margin: 0 0 1.2em;
+}
+
+.parchment-card-text p:last-child {
+  margin-bottom: 0;
 }
