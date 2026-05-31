@@ -12,6 +12,21 @@ const ImageExporter = {
     const card = this._buildCard(node);
     document.body.appendChild(card);
 
+    // Make sure the card's web fonts are actually loaded before rendering.
+    // html2canvas paints synchronously, so any face that isn't loaded at call
+    // time falls back to the serif default in the exported image.
+    //
+    // Google Fonts serves each family (Crimson Pro, Stoke) as many separate
+    // @font-face rules split by unicode-range and weight, and the browser only
+    // fetches a given face once a rendered glyph needs it. `document.fonts.ready`
+    // does NOT force-load faces that were never triggered on screen, which is
+    // why the body text (Crimson Pro 400) could export as serif while the
+    // subtitle — a weight already used elsewhere in the UI — looked fine.
+    //
+    // So we force-load every weight/style the card uses, passing the card's
+    // actual text so the matching unicode-range subsets are fetched too.
+    await this._ensureFontsLoaded(card);
+
     // Wait for image to load if present
     const img = card.querySelector('.parchment-card-image img');
     if (img && img.src) {
@@ -45,6 +60,34 @@ const ImageExporter = {
       alert('Failed to export image. Check the console for details.');
     } finally {
       card.remove();
+    }
+  },
+
+  // Force-load every web-font face the card renders with, scoped to the card's
+  // actual text so the correct Google Fonts unicode-range subsets are fetched.
+  // Best-effort with a timeout so export never hangs if a font request stalls.
+  async _ensureFontsLoaded(card) {
+    if (!document.fonts || !document.fonts.load) return;
+
+    const text = card.textContent || '';
+    // (weight/style, family) combinations used by the parchment card.
+    const specs = [
+      `400 22px 'Crimson Pro'`,        // body text
+      `italic 400 22px 'Crimson Pro'`, // body text (italic runs)
+      `500 22px 'Crimson Pro'`,        // subtitle
+      `400 38px 'Stoke'`,              // title
+    ];
+
+    const loads = specs.map((spec) =>
+      document.fonts.load(spec, text).catch(() => {})
+    );
+    const timeout = new Promise((resolve) => setTimeout(resolve, 4000));
+
+    try {
+      await Promise.race([Promise.all(loads), timeout]);
+      await Promise.race([document.fonts.ready, timeout]);
+    } catch (e) {
+      // Best-effort: render with whatever is available.
     }
   },
 
